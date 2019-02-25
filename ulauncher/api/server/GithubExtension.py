@@ -10,14 +10,14 @@ from ulauncher.util.named_tuple_from_dict import namedtuple_from_dict
 DEFAULT_GITHUB_BRANCH = 'master'
 
 # pylint: disable=too-few-public-methods
-class IPreference:
+class IManifestPreference:
     default_value = None  # type: str
     id = None  # type: str
     name = None  # type: str
     type = None  # type: str
 
 
-class IOptions:
+class IManifestOptions:
     query_debounce = None  # type: float
 
 
@@ -27,8 +27,8 @@ class IManifest:
     developer_name = None  # type: str
     icon = None  # type: str
     name = None  # type: str
-    options = None  # type: IOptions
-    preferences = None  # type: List[IPreference]
+    options = None  # type: IManifestOptions
+    preferences = None  # type: List[IManifestPreference]
 
 
 class ICommit:
@@ -52,6 +52,8 @@ class GithubExtension:
         """
         Finds maximum version that is compatible with current version of Ulauncher
         and returns a commit or branch/tag name
+
+        :raises ulauncher.api.server.GithubExtension.InvalidVersionsFileError:
         """
         commit = ""
         for ver in self.read_versions():
@@ -95,20 +97,20 @@ class GithubExtension:
     def read_manifest(self, commit) -> IManifest:
         return namedtuple_from_dict(self._read_json(commit, 'manifest.json'))
 
-    def get_last_commit(self) -> ICommit:
-        """
-        :rtype dict: {'last_commit': str, 'last_commit_time': str}
-        :raises urllib.error.HTTPError:
-        """
-        project_path = self._get_project_path()
-        branch_head_url = 'https://api.github.com/repos/%s/git/refs/heads/%s' % (project_path, DEFAULT_GITHUB_BRANCH)
-        branch_head = json.loads(urlopen(branch_head_url).read().decode('utf-8'))
-        branch_head_commit = json.loads(urlopen(branch_head['object']['url']).read().decode('utf-8'))
+    # def get_last_commit(self) -> ICommit:
+    #     """
+    #     :rtype dict: {'last_commit': str, 'last_commit_time': str}
+    #     :raises urllib.error.HTTPError:
+    #     """
+    #     project_path = self._get_project_path()
+    #     branch_head_url = 'https://api.github.com/repos/%s/git/refs/heads/%s' % (project_path, DEFAULT_GITHUB_BRANCH)
+    #     branch_head = json.loads(urlopen(branch_head_url).read().decode('utf-8'))
+    #     branch_head_commit = json.loads(urlopen(branch_head['object']['url']).read().decode('utf-8'))
 
-        return namedtuple_from_dict({
-            'last_commit': branch_head_commit['sha'],
-            'last_commit_time': branch_head_commit['committer']['date']  # ISO date
-        })
+    #     return namedtuple_from_dict({
+    #         'last_commit': branch_head_commit['sha'],
+    #         'last_commit_time': branch_head_commit['committer']['date']  # ISO date
+    #     })
 
     def get_download_url(self, commit=DEFAULT_GITHUB_BRANCH) -> str:
         """
